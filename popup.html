@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AdScoop</title>
+  <link rel="stylesheet" href="ui/tokens.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main class="popup">
+    <header class="top">
+      <div class="brand">
+        <svg class="logo" viewBox="0 0 40 40" width="38" height="38" aria-hidden="true">
+          <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb020"/><stop offset="1" stop-color="#f2561d"/></linearGradient></defs>
+          <rect width="40" height="40" rx="11" fill="url(#g)"/>
+          <path d="M11 24.5c0-5.2 4-9.5 9-9.5s9 4.300 9 9.500z" fill="#fff"/>
+          <path d="M12.500 26.500h15L20 33.500z" fill="#fff" opacity=".85"/>
+          <circle cx="24" cy="12" r="2.200" fill="#fff" opacity=".9"/>
+        </svg>
+        <div>
+          <h1>AdScoop</h1>
+          <p>Meta Ads Intelligence &amp; Extractor</p>
+        </div>
+      </div>
+      <button id="btnDash" class="btn ghost small" type="button" title="Open the research dashboard">Dashboard</button>
+    </header>
+
+    <section id="pageBox" class="page" aria-live="polite">
+      <span id="pageDot" class="dot" aria-hidden="true"></span>
+      <div class="page-text">
+        <strong id="pageTitle">Checking this tab…</strong>
+        <small id="pageSub"></small>
+      </div>
+      <button id="btnOpenLib" class="btn link small" type="button" hidden>Open Ad Library</button>
+    </section>
+
+    <section class="stats" aria-label="Extraction statistics">
+      <div class="stat"><span id="statDetected" class="num">–</span><span class="lbl">Ads detected<br>on this page</span></div>
+      <div class="stat"><span id="statExtracted" class="num">0</span><span class="lbl">Extracted<br>this run</span></div>
+      <div class="stat accent"><span id="statSaved" class="num">0</span><span class="lbl">Saved in<br>your library</span></div>
+    </section>
+
+    <section id="progressBox" class="progress" hidden>
+      <div class="progress-head"><span id="progressLabel">0/0 ads</span><button id="btnStop" class="btn link small" type="button">Stop</button></div>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="barFill"></i></div>
+      <small id="progressMsg"></small>
+    </section>
+
+    <section class="actions">
+      <button id="btnNew" class="btn primary" type="button" disabled>Extract New Ads</button>
+      <button id="btnAll" class="btn secondary" type="button" disabled>Extract All Visible Ads</button>
+      <div class="auto">
+        <button id="btnAuto" class="btn outline" type="button" disabled>Auto-scroll &amp; extract</button>
+        <label class="max">up to <input id="maxAds" type="number" min="1" max="500" value="40" inputmode="numeric" aria-label="Maximum ads for auto-scroll"> ads</label>
+      </div>
+      <p class="hint">Tip: scroll or click the page's own “See more” first. <b>New</b> skips ads you already saved.</p>
+    </section>
+
+    <section class="data">
+      <div class="split">
+        <button id="btnCsv" class="btn outline grow" type="button">Download CSV</button>
+        <select id="csvKind" aria-label="CSV content">
+          <option value="full">Everything</option>
+          <option value="analysis">Analysis only</option>
+          <option value="raw">Raw data only</option>
+        </select>
+      </div>
+      <button id="btnClear" class="btn danger small" type="button">Clear data</button>
+    </section>
+
+    <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+    <footer>Stored only in this browser · Analysis runs locally</footer>
+  </main>
+
+  <script src="utils/helpers.js"></script>
+  <script src="utils/deduplication.js"></script>
+  <script src="utils/storage.js"></script>
+  <script src="export/csv-exporter.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

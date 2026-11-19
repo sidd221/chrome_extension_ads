@@ -1,0 +1,63 @@
+{
+  "manifest_version": 3,
+  "name": "AdScoop – Meta Ads Intelligence & Extractor",
+  "short_name": "AdScoop",
+  "version": "1.0.0",
+  "description": "Extract ads you can see in the Meta Ads Library, analyse hooks, copy and strategy locally, and export everything to CSV.",
+  "minimum_chrome_version": "110",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "AdScoop",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "options_page": "dashboard/dashboard.html?view=settings",
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "downloads",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://www.facebook.com/ads/library/*",
+    "https://facebook.com/ads/library/*",
+    "https://*.facebook.com/ads/library/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.facebook.com/ads/library/*",
+        "https://facebook.com/ads/library/*",
+        "https://*.facebook.com/ads/library/*"
+      ],
+      "js": [
+        "utils/helpers.js",
+        "content/meta-extractor.js",
+        "content/dom-observer.js",
+        "content/content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  }
+}

@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AdScoop Dashboard</title>
+  <link rel="stylesheet" href="../ui/tokens.css">
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <header class="appbar">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 40 40" width="32" height="32" aria-hidden="true">
+        <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb020"/><stop offset="1" stop-color="#f2561d"/></linearGradient></defs>
+        <rect width="40" height="40" rx="11" fill="url(#g)"/>
+        <path d="M11 24.5c0-5.2 4-9.5 9-9.5s9 4.300 9 9.500z" fill="#fff"/>
+        <path d="M12.500 26.500h15L20 33.500z" fill="#fff" opacity=".85"/>
+        <circle cx="24" cy="12" r="2.200" fill="#fff" opacity=".9"/>
+      </svg>
+      <div><b>AdScoop</b><span>Research dashboard</span></div>
+    </div>
+    <nav class="tabs" aria-label="Sections">
+      <button class="tab" data-view="library" type="button">Library <span id="libCount" class="pill">0</span></button>
+      <button class="tab" data-view="settings" type="button">Settings</button>
+      <button class="tab" data-view="help" type="button">Help</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- LIBRARY -->
+    <section id="view-library" class="view">
+      <div class="toolbar">
+        <input id="q" class="search" type="search" placeholder="Search copy, advertiser, Ad ID, hook, angle…" aria-label="Search advertisements">
+        <select id="fAdvertiser" aria-label="Filter by advertiser"></select>
+        <select id="fPlatform" aria-label="Filter by platform"></select>
+        <select id="fMedia" aria-label="Filter by media type"></select>
+        <select id="fStatus" aria-label="Filter by status"></select>
+        <select id="sort" aria-label="Sort">
+          <option value="extracted-desc">Extracted: newest first</option>
+          <option value="extracted-asc">Extracted: oldest first</option>
+          <option value="start-desc">Ad start date: newest</option>
+          <option value="start-asc">Ad start date: oldest</option>
+          <option value="hook-desc">Hook score: high → low</option>
+          <option value="advertiser">Advertiser A → Z</option>
+        </select>
+      </div>
+
+      <div class="bulk">
+        <label class="check"><input id="selAll" type="checkbox"> <span id="selLabel">Select all shown</span></label>
+        <span class="spacer"></span>
+        <label class="inline">CSV
+          <select id="csvKind" aria-label="CSV content">
+            <option value="full">Everything</option>
+            <option value="analysis">AI/analysis only</option>
+            <option value="raw">Raw data only</option>
+          </select>
+        </label>
+        <button id="expSelected" class="btn outline" type="button" disabled>Export selected</button>
+        <button id="expFiltered" class="btn outline" type="button">Export shown</button>
+        <button id="expAll" class="btn primary" type="button">Export all</button>
+        <button id="aiSelected" class="btn outline" type="button" hidden>Analyse selected with AI</button>
+        <button id="reSelected" class="btn ghost" type="button" disabled>Re-analyse selected</button>
+        <button id="delSelected" class="btn danger" type="button" disabled>Delete selected</button>
+      </div>
+
+      <div id="resultInfo" class="result-info" aria-live="polite"></div>
+      <div id="grid" class="grid"></div>
+      <div id="empty" class="empty" hidden>
+        <h2>Your library is empty</h2>
+        <ol>
+          <li>Open the <a href="https://www.facebook.com/ads/library/" target="_blank" rel="noopener noreferrer">Meta Ads Library</a> and search for a competitor or keyword.</li>
+          <li>Click the AdScoop icon in the toolbar → <b>Extract New Ads</b>.</li>
+          <li>Come back here to review, filter and export.</li>
+        </ol>
+        <p>Just want to see how it works? <button id="loadSample" class="btn outline small" type="button">Load sample data</button>
+          <small>Ten invented ads, clearly marked SAMPLE – they are not real ads.</small></p>
+      </div>
+      <div class="more-wrap"><button id="more" class="btn outline" type="button" hidden>Show more</button></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="view-settings" class="view" hidden>
+      <form id="settingsForm" class="settings" autocomplete="off">
+        <h2>Settings</h2>
+
+        <fieldset>
+          <legend>Extraction</legend>
+          <label class="row"><input type="checkbox" id="s_expand"> <span><b>Expand “See more”</b> on cards before reading them (clicks the page's own button)</span></label>
+          <label class="row"><input type="checkbox" id="s_highlight"> <span><b>Outline ads</b> on the page once extracted</span></label>
+          <div class="grid2">
+            <label>Auto-scroll: default number of ads<input type="number" id="s_max" min="1" max="500"></label>
+            <label>Auto-scroll: wait between scrolls (ms, min 1500)<input type="number" id="s_delay" min="1500" max="15000" step="100"></label>
+          </div>
+          <p class="note">Slow scrolling keeps AdScoop within normal browsing speed. It stops by itself if Meta shows a login wall, CAPTCHA or rate-limit message – it never tries to get around them.</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>CSV export</legend>
+          <label class="row"><input type="checkbox" id="s_bom"> <span><b>UTF-8 BOM</b> (recommended: lets Excel show Hindi, emoji and ₹ correctly)</span></label>
+          <label class="row"><input type="checkbox" id="s_guard"> <span><b>Spreadsheet formula guard</b> (prefix cells starting with = + - @ so ad copy can never run as a formula)</span></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Image OCR (text inside creatives)</legend>
+          <label>Engine
+            <select id="s_ocr">
+              <option value="tesseract">Tesseract – bundled, offline, free (English + Hindi)</option>
+              <option value="vision-ai">Vision AI – uses the AI key below</option>
+              <option value="off">Off</option>
+            </select>
+          </label>
+          <p class="note">OCR starts only when you press “Read text from image” on an ad. Meta's image links are signed and expire, so re-extract an ad if OCR says the link is dead.</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Optional AI analysis <span class="tag infer">your own API key</span></legend>
+          <p class="note strong">The local rule-based analysis is the default and needs no key. If you add a key, ad copy is sent to the provider you choose <u>only</u> when you press “Analyse with AI”. You pay that provider directly; AdScoop has no server and no key of its own.</p>
+          <div class="grid2">
+            <label>Provider
+              <select id="ai_provider">
+                <option value="openai-compatible">OpenAI-compatible (OpenAI, OpenRouter, Groq, Ollama…)</option>
+                <option value="anthropic">Anthropic (Claude)</option>
+              </select>
+            </label>
+            <label>Model<input id="ai_model" placeholder="e.g. gpt-4o-mini"></label>
+          </div>
+          <label>Base URL<input id="ai_base" placeholder="https://api.openai.com/v1" spellcheck="false"></label>
+          <label>API key<input id="ai_key" type="password" placeholder="Paste your key (stored only in this browser)" spellcheck="false" autocomplete="off"></label>
+          <p class="note">The key is saved unencrypted in this browser's extension storage and is never sent to facebook.com or any site except the Base URL above. Use a key with a spending limit.</p>
+          <div class="row-actions"><button id="ai_test" class="btn outline small" type="button">Test connection</button><span id="ai_test_result" class="note"></span></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Optional video transcription <span class="tag infer">your own API key</span></legend>
+          <p class="note">Meta usually streams ad video through blob: links the browser cannot download, so a transcript is only possible when a direct video link was captured. Otherwise AdScoop says “unavailable” and lets you paste a transcript.</p>
+          <div class="grid2">
+            <label>Base URL<input id="tr_base" placeholder="https://api.openai.com/v1" spellcheck="false"></label>
+            <label>Model<input id="tr_model" placeholder="whisper-1"></label>
+          </div>
+          <label>API key<input id="tr_key" type="password" placeholder="Paste your key" spellcheck="false" autocomplete="off"></label>
+        </fieldset>
+
+        <div class="row-actions sticky">
+          <button class="btn primary" type="submit">Save settings</button>
+          <span id="saveMsg" class="note" aria-live="polite"></span>
+        </div>
+
+        <fieldset>
+          <legend>Your data</legend>
+          <div class="row-actions">
+            <button id="backup" class="btn outline small" type="button">Export backup (JSON)</button>
+            <label class="btn outline small file">Import backup (JSON)<input id="restore" type="file" accept="application/json,.json" hidden></label>
+            <button id="loadSample2" class="btn ghost small" type="button">Load sample data</button>
+            <button id="rmSample" class="btn ghost small" type="button">Remove sample data</button>
+            <button id="wipe" class="btn danger small" type="button">Delete everything</button>
+          </div>
+          <p class="note">Ads live in chrome.storage.local on this computer. Importing a backup merges by Ad ID – nothing is duplicated.</p>
+        </fieldset>
+      </form>
+    </section>
+
+    <!-- HELP -->
+    <section id="view-help" class="view" hidden>
+      <article class="help">
+        <h2>Getting started</h2>
+        <ol>
+          <li>Open <b>facebook.com/ads/library</b>, choose a country and search for a business, product or competitor.</li>
+          <li>Let the results load, then click the <b>AdScoop</b> icon.</li>
+          <li><b>Extract New Ads</b> reads every visible ad you have not saved yet. <b>Extract All Visible Ads</b> re-reads everything on screen. <b>Auto-scroll &amp; extract</b> scrolls slowly for you up to the number you choose.</li>
+          <li>Review the cards here, filter, select, and <b>Export</b> CSV. Open it in Excel or Google Sheets.</li>
+        </ol>
+        <h2>What is real data and what is analysis?</h2>
+        <ul>
+          <li><span class="tag">From the ad</span> Values AdScoop read from the page. Anything it could not see stays empty, with a reason in <i>Extraction notes</i>.</li>
+          <li><span class="tag machine">Machine-read</span> Text read from an image by OCR or from a video by transcription. It can contain errors and only exists after you ran it.</li>
+          <li><span class="tag infer">Inferred</span> Conclusions drawn by AdScoop's rules (or by your AI model). Meta does not publish hooks, angles, audiences, funnel stages or objectives. The 1–10 hook score is an estimated heuristic, not a performance prediction. In the CSV these columns start with <code>[Inferred]</code>.</li>
+        </ul>
+        <h2>Known limits</h2>
+        <ul>
+          <li>The Ad Library shows no spend, reach or performance for most ads, so AdScoop cannot report them.</li>
+          <li>Landing page URLs, Page IDs and platforms are only captured when the card exposes them.</li>
+          <li>Image and video links are signed Meta CDN links that expire after a while.</li>
+          <li>Meta changes its page layout often. If cards stop being detected, see the README troubleshooting section.</li>
+          <li>Use AdScoop only for what you can already see in your own browser, at normal speed, and in line with Meta's terms.</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+
+  <aside id="drawer" class="drawer" aria-hidden="true" aria-label="Ad details">
+    <div class="drawer-backdrop" data-close="1"></div>
+    <div class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+      <div class="drawer-head"><div><h2 id="dTitle"></h2><div id="dSub" class="mono muted"></div></div><button class="btn ghost small" type="button" data-close="1" aria-label="Close details">Close ✕</button></div>
+      <div id="dBody" class="drawer-body"></div>
+    </div>
+  </aside>
+
+  <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+
+  <script src="../vendor/tesseract/tesseract.min.js"></script>
+  <script src="../utils/helpers.js"></script>
+  <script src="../utils/deduplication.js"></script>
+  <script src="../utils/storage.js"></script>
+  <script src="../analysis/hook-analyzer.js"></script>
+  <script src="../analysis/marketing-analyzer.js"></script>
+  <script src="../analysis/ai-analyzer.js"></script>
+  <script src="../analysis/creative-analyzer.js"></script>
+  <script src="../export/csv-exporter.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>
